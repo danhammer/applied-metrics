@@ -1,0 +1,27 @@
+#+AUTHOR:      Dan Hammer
+#+TITLE:       ARE213: Section 05
+#+OPTIONS:     toc:nil num:nil 
+#+LATEX_HEADER: \usepackage{mathrsfs}
+#+LATEX_HEADER: \usepackage{graphicx}
+#+LATEX_HEADER: \usepackage{subfigure}
+#+LATEX_HEADER: \usepackage[margin=1in]{geometry}
+#+LATEX_HEADER: \RequirePackage{fancyvrb}
+#+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\small,formatcom = {\color[rgb]{0.1,0.2,0.9}}}
+#+LATEX: \setlength{\parindent}{0in}
+#+STARTUP: fninline
+#+AUTHOR: 
+#+TITLE: 
+
+*Interpretation of Coefficients and R Review* \hfill
+*ARE213*: Section 01 \\ \\
+
+The purpose of this section is twofold: (1) Basic review of the
+interpretation of coefficients on common, linear models that we will
+encounter in class. (2) Introduction and quick review of useful =R=
+code to help with problem sets.  The section notes are an open-source,
+Github project, which can be found here.  The text is an =org-mode=
+document, which can be compiled as HTML or \LaTeX.  The text is
+interactive, if you are an Emacs user: you can run the =R= code from
+within the document, and then compile the results immediately.  If you are interested in contributing to this project, see the readme on the code repository, found [[here][
+
+* Interpretation of Coefficients
