@@ -82,7 +82,6 @@ the =foreign= package to directly read the data set, without re-saving
 it to a more common format.
 
 #+begin_src R :exports code :results none
-  library(foreign)
   data <- read.csv("../../../resources/ps1.csv")
 #+end_src
 

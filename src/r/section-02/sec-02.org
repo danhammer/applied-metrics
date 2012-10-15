@@ -1,0 +1,149 @@
+#+AUTHOR:      Dan Hammer
+#+TITLE:       ARE213: Section 02
+#+OPTIONS:     toc:nil num:nil 
+#+LATEX_HEADER: \usepackage{mathrsfs}
+#+LATEX_HEADER: \usepackage{graphicx}
+#+LATEX_HEADER: \usepackage{booktabs}
+#+LATEX_HEADER: \usepackage{dcolumn}
+#+LATEX_HEADER: \usepackage{subfigure}
+#+LATEX_HEADER: \usepackage[margin=1in]{geometry}
+#+LATEX_HEADER: \RequirePackage{fancyvrb}
+#+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\small,formatcom = {\color[rgb]{0.1,0.2,0.9}}}
+#+LATEX: \renewcommand{\x}{{\bf x}}
+#+LATEX: \renewcommand{\D}{{\bf D}}
+#+LATEX: \renewcommand{\Dp}{{\bf D}^{\prime}}
+#+LATEX: \setlength{\parindent}{0in}
+#+STARTUP: fninline
+#+AUTHOR: 
+#+TITLE: 
+
+*SUTVA and nonparametric regression* \hfill
+*ARE213*: Section 02 \\ \\
+
+The purpose of this section is to provide a numerical example for the
+Stable Unit Value Treatment Assumption (SUTVA) and to present an
+example of loess regression using =ggplot2=.  
+
+* SUTVA
+
+The very simple but fundamental assumption of stable unit treatment
+values can be illustrated with a numerical example.  The notation is
+fairly simple, but the numerical example made the concept much clearer
+to me.  Let $\D$ be an $N \times 1$ column of treatment values, so
+that $D_i$ is an indicator of treatment for observation $i = 1, 2,
+\ldots, N$.  Let $\Dp$ be another vector which defines a different
+treatment regime. Formally, SUTVA states that if $D_i = D_i^{\prime}$,
+then $Y_i (\D) = Y_i (\Dp)$.  Less formally, SUTVA states that there
+is no spillover effect from the treatment.  As stated in class, if
+SUTVA does not hold, then there is not a singular treatment effect,
+but rather the potential for an effect of a change in $D_i$ on all
+observations $j = 1, 2, \ldots, N$, not just on the own observation
+effect.  Consider the specific treatment vector $\D$:
+
+#+begin_src R :results output :exports both :tangle yes :session
+  (D <- c(1,0,1,0,0,0,0,0,0,1))
+#+end_src 
+
+#+RESULTS:
+:  [1] 1 0 1 0 0 0 0 0 0 1
+
+Define the treatment effect to be determined by the random vector
+$\x$.  This, if there were no spillover at all, $Y_i(1) = x_i$ and
+$Y_i(0) = 0$.  However, we induce spillover by defining the treatment
+effect to depend on a rolling function.  Specifically, define
+$Y_i(D_i) = \max\{D_{i+1}, D_i\} \cdot x_i$.  The following applies
+this rule, and then prints the value of the treatment for $i = 7$.
+
+#+begin_src R :results output :exports both :tangle yes :session
+  library(zoo)
+  x <- runif(10)
+  Y <- rollmax(D, 2, fill = 1) * x
+  print(Y[7])
+#+end_src 
+
+#+results:
+: [1] 0
+
+Now suppose we adjust the treatment regime by setting $D_8 = 1$. Under
+both regimes, $D_7 = D^{\prime}_7 = 0$, such that if SUTVA were to
+hold, we should observe $Y_7(\D) = Y_7(\Dp)$.  This is not the case,
+however, since the value of $D_8$ informs the treatment effect of the
+seventh observation.  
+
+#+begin_src R :results output :exports both :tangle yes :session
+  D[8] <- 1
+  Y <- rollmax(D, 2, fill = 1) * x
+  print(Y[7])
+#+end_src 
+
+#+results:
+: [1] 0.7788191
+
+When the treatment effect of one observation depends on the treatment
+of another observation, then SUTVA does not hold.  We are unable to
+estimate the treatment effect relative to the "no intervention"
+scenario.  This is a relatively simple example, but it's conceivable
+that the effect across observations may be much more complicated.
+
+* Loess figures in ggplot2
+
+We will learn more about nonparametric regression later in the course.
+Plotting the loess regression may suggest a model specification that
+may not be immediately apparent.  Take, for example, the relationship
+between birthweight and maternal age.  We can read in the data and
+take a random sample of 5,000, just to speed things up a bit.  
+
+#+begin_src R :exports code :results none
+  library(ggplot2)
+  data <- read.csv("../../../resources/ps1.csv")
+  var.names <- c("dbrwt", "dmage")
+  idx <- sample.int(nrow(data), 5000)
+  sm.data <- data[idx, var.names]
+#+end_src 
+
+#+RESULTS:
+
+The loess model is a specific variant of locally weighted scatterplot
+smoothing regression analysis.  Note that this is very similar to the
+lowess model, which are separated only by the smoothing technique.
+When all observations are given equal weight over the domain, both
+loess and lowess are equivalent to simple linear regression.  However,
+locally weighted regression analysis place higher weight on "nearby"
+observations.  The specification of what constitutes "nearby"
+observations and the method of weighting distinguishes the various
+models.  Mostly, the following just presents examples that are useful
+for learning =ggplot2=.  Fig. \ref{fig:loess} presents the loess
+curve on its own, and Fig. \ref{fig:fit} presents the same curve
+with the scatterplot points.
+
+#+CAPTION: Loess regression
+#+LABEL: fig:loess 
+#+begin_src R :results output graphics :file fig1.png :width 700 :height 400 :session :tangle yes :exports both
+  (p <- ggplot(sm.data, aes(x=dmage, y=dbrwt)) + geom_smooth(method = "loess", size = 1.5))
+#+end_src 
+
+#+RESULTS:
+[[file:fig1.png]]
+
+The curve in Fig. \ref{fig:loess} suggests that the relationship
+between maternal age and infant birthweight may be quadratic.  Mothers
+that are relatively young and old may give birth to lighter babies,
+potentially indicating poorer infant health.  Moreover, the confidence
+intervals are wider toward the tails of the age distribution, since
+there are fewer observations in these age ranges.  To examine the
+curve in context of the actual observations, we can add the actual
+data as a scatterplot in Fig. \ref{fig:fit}.
+
+#+CAPTION: Loess regression with scatter plot
+#+LABEL: fig:fit
+#+begin_src R :results output graphics :file fig2.png :width 700 :height 400 :session :tangle yes :exports both
+  p + geom_point()
+#+end_src 
+
+#+RESULTS:
+[[file:fig2.png]]
+
+The quadratic relationship is interesting, and we can show that it is
+statistically significant, but even for the small subsample of the
+data, the loess model explains only a small portion of the variation
+in birthweight.  

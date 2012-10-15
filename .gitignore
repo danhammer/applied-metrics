@@ -1,4 +1,6 @@
 *.Rhistory
+*.tex
+*.DS_Store
 *.#*
 *#*
 *.aux
