@@ -1,3 +1,8 @@
+*.Rhistory
+*.#*
+*#*
+*.aux
+*.bbl
 /target
 /lib
 /classes

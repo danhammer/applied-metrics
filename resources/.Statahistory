@@ -1,0 +1,6 @@
+ls
+use ps1
+desc
+use ps1.dta
+outsheet using ps1.csv, comma
+rm ps1.dta
