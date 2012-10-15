@@ -1,5 +1,6 @@
 *.Rhistory
 *.tex
+*.pyg
 *.DS_Store
 *.#*
 *#*
