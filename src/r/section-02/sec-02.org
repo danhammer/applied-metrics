@@ -85,6 +85,52 @@ estimate the treatment effect relative to the "no intervention"
 scenario.  This is a relatively simple example, but it's conceivable
 that the effect across observations may be much more complicated.
 
+* Poorly defined treatments
+
+Suppose that the value of the treatment is a function of the level of
+the outcome variable.  This may seem a little circular, but consider a
+situation where the market for the outcome adjusts based on the total
+activity in that market.  What if the individual treatment effect is a
+function of the level of the aggregate outcome?  The treatment is
+poorly defined, and it may be difficult to settle on a coneptual idea
+of the treatment effect, let alone an empirical assessment.  Suppose
+for example, that the treatment effect for each individual is $x_i
+\cdot (\sum_i Y_i)^{-1}$.  Ignore the timing of the treatment for now,
+and assume that the iterative adjustment process is condensed into a
+single time period. The higher aggregate treatment effect will induce
+a shift of the market supply, perhaps, and lower the individual
+treatment effect --- a sort of congestion effect.  \\
+
+The following example illustrates this point.  We can calculate the
+treatment effects for each of the ten individuals, which is a function
+of the aggregate treatment effect.
+
+#+begin_src R :results output :exports both :tangle yes :session
+  D <- c(1,0,1,0,1,0,1,1,0,1)
+  x <- runif(10)
+  (Y <- D * x * 1/sum(D * x))
+#+end_src 
+
+#+results:
+:  [1] 0.18658768 0.00000000 0.18340310 0.00000000 0.08281655 0.00000000
+:  [7] 0.22954113 0.08917835 0.00000000 0.22847320
+
+If the market responds to the aggregate level of treatment --- which
+it does by construction --- then by changing the treatment regime so
+that observation $i = 2$ now receives treatment, the effect will be
+felt by all other individuals.  Note that the treatment effects for
+the other observations are slightly lower with the restricted change
+in the treatment regime.
+
+#+begin_src R :results output :exports both :tangle yes :session
+  D[2] <- 1
+  (Y <- D * x * 1/sum(D * x))
+#+end_src 
+
+#+results:
+:  [1] 0.16208346 0.13132815 0.15931711 0.00000000 0.07194040 0.00000000
+:  [7] 0.19939592 0.07746672 0.00000000 0.19846823
+
 * Loess figures in ggplot2
 
 We will learn more about nonparametric regression later in the course.
