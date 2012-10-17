@@ -1,0 +1,30 @@
+#+AUTHOR:      Dan Hammer
+#+TITLE:       ARE213: Section 07
+#+OPTIONS:     toc:nil num:nil 
+#+LATEX_HEADER: \usepackage{mathrsfs}
+#+LATEX_HEADER: \usepackage{graphicx}
+#+LATEX_HEADER: \usepackage{booktabs}
+#+LATEX_HEADER: \usepackage{dcolumn}
+#+LATEX_HEADER: \usepackage{subfigure}
+#+LATEX_HEADER: \usepackage[margin=1in]{geometry}
+#+LATEX_HEADER: \RequirePackage{fancyvrb}
+#+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\small,formatcom = {\color[rgb]{0.1,0.2,0.9}}}
+#+LATEX: \renewcommand{\E}{\mathbb{E}}
+#+LATEX: \renewcommand{\with}{\hspace{8pt}\mbox{with}\hspace{6pt}}
+#+LATEX: \setlength{\parindent}{0in}
+#+STARTUP: fninline
+#+AUTHOR: 
+#+TITLE: 
+
+*Random and Fixed Effects* \hfill
+*ARE213*: Section 07 \\ \\
+
+#+begin_src R :results output :exports both :tangle yes :session
+  library(ggplot2)
+  c=rep(c(1,2,3,4,5), 20); x=rnorm(100); eps <- rnorm(100)
+  y =  10 * c + x + eps
+  summary(lm(y~x))
+  ggplot(data.frame(c, x, y), aes(x = x, y = y, color=c)) + geom_point() + geom_smooth(method=lm)
+#+end_src 
+
+
