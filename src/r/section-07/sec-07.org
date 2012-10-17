@@ -20,9 +20,11 @@
 *ARE213*: Section 07 \\ \\
 
 #+begin_src R :results output :exports both :tangle yes :session
+  library(ggplot2)
   c=rep(c(1,2,3,4,5), 20); x=rnorm(100); eps <- rnorm(100)
   y =  10 * c + x + eps
+  summary(lm(y~x))
   ggplot(data.frame(c, x, y), aes(x = x, y = y, color=c)) + geom_point() + geom_smooth(method=lm)
-  
 #+end_src 
+
 

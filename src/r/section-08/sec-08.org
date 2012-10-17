@@ -10,6 +10,8 @@
 #+LATEX_HEADER: \RequirePackage{fancyvrb}
 #+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\small,formatcom = {\color[rgb]{0.1,0.2,0.9}}}
 #+LATEX: \renewcommand{\E}{\mathbb{E}}
+#+LATEX: \renewcommand{\ubst}{\bar{u}_{st}}
+#+LATEX: \renewcommand{\one}{{\bf 1}}
 #+LATEX: \renewcommand{\with}{\hspace{8pt}\mbox{with}\hspace{6pt}}
 #+LATEX: \setlength{\parindent}{0in}
 #+STARTUP: fninline
@@ -18,3 +20,34 @@
 
 *Differences-in-Differences* \hfill
 *ARE213*: Section 08 \\ \\
+
+Suppose that we observe two states, $s = \{0,1\}$, where one was
+affected by a policy change and the other was not.  The policy change
+was time dependent, such that neither state was affected in $t = 0$
+but one was affected when $t = 1$. $$Y_{ist} = \bar{Y} + \tau D_{st} +
+\gamma_s + \delta_t + \epsilon_{st}+ u_{ist}$$ The treatment is only
+indexed by $s$ and $t$, since the treatment does not vary at the
+individual level, but only the state level.  The component $\delt _t$
+captures any time tr nd that changes for both states, over time.  The
+error term $\epsilon_{st}$ is the aggregate randomness, whereas
+$u_{ist}$ is the individual, idiosyncratic error term.  Even in the
+treated state, $D_{st}$ is set to 0 when $t = 0$ --- before the
+treatment is enacted.  \\
+
+This specification ensures that $\ubst = 0$, since any mean effect
+will be folded into the $\epsilon_{st}$ term.\\
+
+We need to be worried about factors that vary at the level of the
+treatment.  Absent the treatment, the two states /would have/ followed
+similar trajectories.  Is this true for IDN and MYS?  Are there
+differential impacts to changes in oil palm price?  Force
+identification to nearby the policy shock, and soak up longer term
+trend variation.  Policy endogeneity may be an issue.  Higher rates of
+deforestation may have focused conservation attention on Indonesia.
+Why should this be a problem?
+
+The regression form is:
+\begin{eqnarray*}
+Y_{ist} &=& \alpha + \tau D_{st} + \gamma \one (s = 1) + \delta \one (t = 1) + \epsilon_{st} + u_{ist} \\ &\Leftrightarrow& \\
+Y_{ist} &=& \alpha + \tau \one (s=1) \one (t = 1) + \gamma \one (s = 1) + \delta \one (t = 1) + \epsilon_{st} + u_{ist} 
+\end{eqnarray*}
