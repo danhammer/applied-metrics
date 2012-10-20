@@ -10,6 +10,10 @@
 #+LATEX_HEADER: \RequirePackage{fancyvrb}
 #+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\small,formatcom = {\color[rgb]{0.1,0.2,0.9}}}
 #+LATEX: \renewcommand{\E}{\mathbb{E}}
+#+LATEX: \renewcommand{\x}{{\bf x}}
+#+LATEX: \renewcommand{\c}{{\bf c}}
+#+LATEX: \renewcommand{\y}{{\bf y}}
+#+LATEX: \renewcommand{\eps}{{\bf \epsilon}}
 #+LATEX: \renewcommand{\with}{\hspace{8pt}\mbox{with}\hspace{6pt}}
 #+LATEX: \setlength{\parindent}{0in}
 #+STARTUP: fninline
@@ -19,12 +23,131 @@
 *Random and Fixed Effects* \hfill
 *ARE213*: Section 07 \\ \\
 
-#+begin_src R :results output :exports both :tangle yes :session
+The presence of an unobserved, individual effect $c_i$ in a panel data
+model will create a correlation over time in the outcome variable,
+even if the idiosyncratic error is completely random.  Still, with the
+standard assumptions in place, ordinary least squares will yield a
+consistent estimator.  Consistent but inefficient.  The correlated
+structure of the composite error, which imclused the individual
+effect, must be made in order to correctly identify the
+variance-covariance structure. \\
+
+The following illustrates the variance of the linear estimator,
+relative to the estimate that fully accounts for the fixed effects.
+The data generating process is defined by $\y = 10 \c + \x + \eps$,
+where $\eps \sim N(0,1)$ and $c_i \in \{1,2,3,4,5\}$.  By
+construction, $\x$ and $\c$ are orthogonal, so that the pooled linear
+estimator will be consistent.  Figure \ref{fig:ols} and \ref{fig:dens}
+together show why the simple, pooled estimator will be inefficient.
+The following code generates a panel data set with $N = 5$ and $T =
+20$, and then plots the full data set with an overall linear fit in
+Figure \ref{fig:ols}.  It is apparent that the linear fit is subject
+to the spread of the covariate $\x$ from within a particular group.
+Generally, increased variation in the cofactors will yield a more
+precise estimator; but the variable intercept (read: fixed effect)
+that is relegated to the error term could potentially reverse this
+relationship.
+
+#+CAPTION: Fixed effect scatterplot with pooled, linear fit
+#+LABEL: fig:ols
+#+begin_src R :results output graphics :file fig1.png :width 700 :height 400 :session :tangle yes :exports both 
   library(ggplot2)
   c=rep(c(1,2,3,4,5), 20); x=rnorm(100); eps <- rnorm(100)
   y =  10 * c + x + eps
-  summary(lm(y~x))
-  ggplot(data.frame(c, x, y), aes(x = x, y = y, color=c)) + geom_point() + geom_smooth(method=lm)
+  p <- ggplot(data.frame(c, x, y), aes(x = x, y = y, color=c))
+  (p <- p + geom_point() + geom_smooth(method=lm))
 #+end_src 
 
+#+RESULTS:
+[[file:fig1.png]]
+
+We can directly calculate the variance of the coefficient on $\x$, but
+this is too much effort.  Instead, we can bootstrap the distributions,
+since we really only care about the relative efficiency of the
+estimators.  Figure \ref{fig:dens} clearly illustrates that the pooled
+estimate is inefficient relative to directly modelling the true fixed
+effect.  We use $B=100$ iterations, regenerating the data each
+time. For this simple example, the value of the individual identifier
+is an argument in the data generating process.  Even if this were not
+the case, however, the distributions in Figure \ref{fig:dens} suggest
+that there must be a better way to weight the estimator to achieve a
+greater efficiency.  And in fact, there is --- clustered variance, or
+the =robust= option in Stata.  The procedure to directly calculate the
+clustered variance is detailed in the lecture notes, and will not be
+presented again here.  
+
+#+begin_src R :results output :exports both :tangle yes :session
+  B <- 100
+  fe.res <- rep(NA, B); ols.res <- rep(NA, B)
+
+  for (i in 1:B) {
+    c=rep(c(1,2,3,4,5), 20); x=rnorm(100); eps <- rnorm(100)
+    y = 10 * c + x + eps
+  
+    ols <- lm(y ~ x)
+    ols.res[i] <-  ols$coefficients[["x"]]
+  
+    fe <- lm(y ~ x + c)
+    fe.res[i] <- fe$coefficients[["x"]]
+  }
+#+end_src 
+
+#+RESULTS:
+
+The geometric argument for the spread of the OLS estimates is
+straightforward: variation in the covariates will have differential
+impacts on the slope of the linear fit, depending on which strata is
+represented.  If by chance, for example, $\x$ observations were
+disproportionately selected from the upper tail of the normal
+distribution when $\c == 1$, then the pooled linear fit will slope
+downward.  If $\c == 5$, however, the linear fit will slope upwards.
+This alone should give pause in assessing the efficiency of the pooled
+estimator.  Conditional on the covariates, all observations should be
+given equal weight.  The clustered variances help to mitigate this
+effect by appropriately reweighting the observations.
+
+#+CAPTION: Pooled OLS versus fixed effects, simulated distributions
+#+LABEL: fig:dens
+#+begin_src R :results output graphics :file fig2.png :width 700 :height 400 :session :tangle yes :exports both 
+  labels <- c(rep("FE", B), rep("pooled", B)) 
+  sim <- data.frame(coefficient=c(fe.res, ols.res), method=labels)
+  ggplot(sim, aes(x = coefficient, fill=method)) + geom_density(alpha=0.2)
+#+end_src 
+
+Suppose that the model was not linear, but rather characterized by a
+limited dependent variable.  What will happen to the consistency and
+efficiency of the pooled estimate, without taking into account the
+correlated structure of the error?  Figure \ref{fig:probit} indicates
+that the additional variation in the composite error is not averaged
+away.  Instead, the pooled OLS estimator is centered around the wrong
+estimate, suggesting that the impact of $\x$ on $\y$ is smaller than
+it is in truth.  The value of directly modelling the error is
+complicated by the nonlinear Probit model.  The following code first
+generates a binary dependent variable from the random covariates, and
+then esimates the generalized linear model using the Probit function
+as the binomial link.  
+
+#+CAPTION: Limited dependent variable: inconsistency of pooled estimator
+#+LABEL: fig:probit
+#+begin_src R :results output graphics :file fig3.png :width 700 :height 400 :session :tangle yes :exports both 
+  fe.probit <- rep(NA, B); pooled.probit <- rep(NA, B)
+  
+  for (i in 1:B) {
+    c=rep(c(1,2,3,4,5), 20); x=rnorm(100); eps <- rnorm(100)
+    y <- ifelse(c + x + eps > 5, 1, 0)
+  
+    pool <- glm(y ~ x, family = binomial(link = "probit"))
+    pooled.probit[i] <- pool$coefficients[["x"]]
+  
+    fe <- glm(y ~ x + c, family = binomial(link = "probit"))
+    fe.probit[i] <- fe$coefficients[["x"]]
+  }
+  
+  labels <- c(rep("FE", B), rep("pooled", B)) 
+  sim.probit <- data.frame(coefficient=c(fe.probit, pooled.probit), method=labels)
+  ggplot(sim.probit, aes(x = coefficient, fill=method)) + geom_density(alpha=0.2)
+#+end_src 
+
+#+RESULTS:
+[[file:fig3.png]]
 
