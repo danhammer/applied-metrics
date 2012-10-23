@@ -10,8 +10,28 @@
 #+LATEX_HEADER: \RequirePackage{fancyvrb}
 #+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\small,formatcom = {\color[rgb]{0.1,0.2,0.9}}}
 #+LATEX: \renewcommand{\E}{\mathbb{E}}
+#+LATEX: \renewcommand{\P}{\mathbb{P}}
 #+LATEX: \renewcommand{\x}{{\bf x}}
+#+LATEX: \renewcommand{\In}{\mathbb{I}_N}
+#+LATEX: \renewcommand{\It}{\mathbb{I}_T}
+#+LATEX: \renewcommand{\Int}{\mathbb{I}_{NT}}
+#+LATEX: \renewcommand{\iN}{\iota}
+#+LATEX: \renewcommand{\iT}{\kappa}
+#+LATEX: \renewcommand{\eit}{\epsilon_{it}}
+#+LATEX: \renewcommand{\lt}{\lambda_{t}}
+#+LATEX: \renewcommand{\uit}{u_{it}}
+#+LATEX: \renewcommand{\u}{{\bf u}}
 #+LATEX: \renewcommand{\c}{{\bf c}}
+#+LATEX: \renewcommand{\X}{{\bf X}}
+#+LATEX: \renewcommand{\Zt}{{\bf Z}_2}
+#+LATEX: \renewcommand{\Ztp}{{\bf Z}_2^{\prime}}
+#+LATEX: \renewcommand{\Zo}{{\bf Z}_1}
+#+LATEX: \renewcommand{\Zop}{{\bf Z}_1^{\prime}}
+#+LATEX: \renewcommand{\Q}{{\bf Q}}
+#+LATEX: \renewcommand{\Qp}{{\bf Q^{\prime}}}
+#+LATEX: \renewcommand{\A}{{\bf A}}
+#+LATEX: \renewcommand{\Xp}{{\bf X^{\prime}}}
+#+LATEX: \renewcommand{\Ap}{{\bf A^{\prime}}}
 #+LATEX: \renewcommand{\y}{{\bf y}}
 #+LATEX: \renewcommand{\eps}{{\bf \epsilon}}
 #+LATEX: \renewcommand{\with}{\hspace{8pt}\mbox{with}\hspace{6pt}}
@@ -52,8 +72,8 @@ relationship.
 #+LABEL: fig:ols
 #+begin_src R :results output graphics :file fig1.png :width 700 :height 400 :session :tangle yes :exports both 
   library(ggplot2)
-  c=rep(c(1,2,3,4,5), 20); x=rnorm(100); eps <- rnorm(100)
-  y =  10 * c + x + eps
+  c <- rep(c(1,2,3,4,5), 20); x <- rnorm(100); eps <- rnorm(100)
+  y <- 10 * c + x + eps
   p <- ggplot(data.frame(c, x, y), aes(x = x, y = y, color=c))
   (p <- p + geom_point() + geom_smooth(method=lm))
 #+end_src 
@@ -81,13 +101,13 @@ presented again here.
   fe.res <- rep(NA, B); ols.res <- rep(NA, B)
 
   for (i in 1:B) {
-    c=rep(c(1,2,3,4,5), 20); x=rnorm(100); eps <- rnorm(100)
-    y = 10 * c + x + eps
+    c <- rep(c(1,2,3,4,5), 20); x <- rnorm(100); eps <- rnorm(100)
+    y <- 10 * c + x + eps
   
     ols <- lm(y ~ x)
     ols.res[i] <-  ols$coefficients[["x"]]
   
-    fe <- lm(y ~ x + c)
+    fe <- lm(y ~ x + factor(c))
     fe.res[i] <- fe$coefficients[["x"]]
   }
 #+end_src 
@@ -133,13 +153,13 @@ as the binomial link.
   fe.probit <- rep(NA, B); pooled.probit <- rep(NA, B)
   
   for (i in 1:B) {
-    c=rep(c(1,2,3,4,5), 20); x=rnorm(100); eps <- rnorm(100)
+    c <- rep(c(1,2,3,4,5), 20); x <- rnorm(100); eps <- rnorm(100)
     y <- ifelse(c + x + eps > 5, 1, 0)
   
     pool <- glm(y ~ x, family = binomial(link = "probit"))
     pooled.probit[i] <- pool$coefficients[["x"]]
   
-    fe <- glm(y ~ x + c, family = binomial(link = "probit"))
+    fe <- glm(y ~ x + factor(c), family = binomial(link = "probit"))
     fe.probit[i] <- fe$coefficients[["x"]]
   }
   
@@ -151,3 +171,86 @@ as the binomial link.
 #+RESULTS:
 [[file:fig3.png]]
 
+* Two-way, fixed effects panel model
+
+Consider the fixed effects, two-way component panel data
+model: $$y_{it} = \alpha + x_{it}\beta + \mu_i + \lt + \eit$$ The
+fixed effects estimator of $\beta$ can be obtained by regressing $\y$
+on $\X$, $\Zo$, and $\Zt$, where $\Zo = \In \otimes \iT$ is a matrix
+of unit indicators and $\Zt = \iN \otimes \It$ is a matrix of time
+period indicators, with $\iT$ a vector of ones of dimension $T$ and
+$\iN$ a vector of ones of dimension $N$.  Note that $\dim(\Zo) = TN
+\times N$ and $\dim(\Zt) = TN \times T$, assuming a balanced panel.\\
+
+The computation for this regression is daunting, however, since it
+requires the inversion of a $(k + N + T - 1) \times (k + N + T - 1)$
+matrix.  The Frisch-Waugh (FW) theorem suggests that instead of a
+direct regression, we can demean the variables across time and units.
+The FW theorem proves that a one-way within transformation will yield
+the same estimator as a fixed effects regression; and the theorem can
+be extended for both individual and time effects.  The error component
+structure has the form $\uit = \mu_i + \lt + \eit$, which is can be
+translated into matrix form: $u = (\In \otimes \iT)\alpha + (\iN
+\otimes \It)\lambda + \epsilon$, with $\alpha = [\alpha_1, \alpha_2,
+\ldots \alpha_N]^{\prime}$ and $\lambda = [\lambda_1, \lambda_2,
+\ldots, \lambda_T]^{\prime}$.  The error structure suggests a
+candidate /purging/ matrix, which removes the individual- and
+time-specific effects, along with the overall mean.  Call this matrix
+$\Q = \In \otimes \It - \In \otimes \iT\iT^{\prime}/T - \It \otimes
+\iN\iN^{\prime}/N + \iN\iN^{\prime}/N \otimes \iT\iT^{\prime}/T$,
+which will remove, in turn, the fixed time, unit, and total (through
+space and time) effect. If both $\y$ and $\X$ are sorted by unit and
+time, then a regression of $\Q\y$ on $\Q\X$ should yield an unbiased
+estimate of $\beta$ with a properly identified error structure.\\
+
+Define $\P_1 = \Int - \Zo(\Zop\Zo)^{-1}\Zop$ and $\P_2 = \Int -
+\Zt(\Ztp\Zt)^{-1}\Ztp$ be the projection matrices for individual and
+time fixed effects, respectively.  It is sufficient to prove that
+$\P_1\P_2 = \Q$ to create a composition projection matrix: first a
+within transformation ignoring the time effects followed by a within
+transformation ignoring the individual effects.  First, note that:
+\begin{eqnarray*} 
+\P_2 = \Int - \Zt(\Ztp\Zt)^{-1}\Ztp &=& \Int - \Zt((\iN \otimes \It)^{\prime}(\iN \otimes \It) )^{-1}\Ztp\\
+&=& \Int - \Zt((\iN^{\prime} \otimes \It^{\prime})(\iN \otimes \It) )^{-1}\Ztp \\
+&=& \Int - \Zt(\iN^{\prime}\iN \otimes \It)^{-1}\Ztp \\
+&=& \Int - \Zt(N \cdot \It)^{-1}\Ztp \\
+&=& \Int - N^{-1}\Zt\Ztp \\
+&=& \Int - N^{-1}(\iN \otimes \It)(\iN \otimes \It)^{\prime}\\
+&=& \Int - N^{-1}(\iN\iN^{\prime} \otimes \It) \\
+&=& \Int - (\iN\iN^{\prime}/N \otimes \It)
+\end{eqnarray*} 
+
+A similar, nearly symmetric argument can be made for $\P_1$.  Then
+note that
+\begin{eqnarray*} 
+\P_1\P_2 &=& \left(\Int - (\iN\iN^{\prime}/N \otimes \It)\right)\left(\Int - (\In \otimes \iT\iT^{\prime}/T)\right)\\
+&=& \Int^2 - (\iN\iN^{\prime}/N \otimes \It) - (\In \otimes \iT\iT^{\prime}/T) + (\iN\iN^{\prime}/N \otimes \It)(\In \otimes \iT\iT^{\prime}/T) \\
+&=& \Int - (\iN\iN^{\prime}/N \otimes \It) - (\In \otimes \iT\iT^{\prime}/T) + (\iN\iN^{\prime}/N \otimes \iT\iT^{\prime}/T) \\
+&=& \In \otimes \It - (\iN\iN^{\prime}/N \otimes \It) - (\In \otimes \iT\iT^{\prime}/T) + (\iN\iN^{\prime}/N \otimes \iT\iT^{\prime}/T) = \Q
+\end{eqnarray*} 
+
+The sequential projection onto the fixed effect matrices is
+numerically equivalent to a two-way within transformation.  The
+properties of the Kronecker product and the steps above ensure that
+$\P_1\P_2 = \P_2\P_1 = \Q$, so that the ordering of the within
+transformations make no difference.  Note that $\Q$ is itself a
+projection matrix, such that $\Q$ is idempotent and symmetric.  The
+estimator can be simplified: $$\beta = \left( (\Q\X)^{\prime} \Q\X
+\right) ^{-1} (\Q\X)^{\prime}\Q\y = \left( \Xp\Qp\Q\X \right)^{-1}
+\Xp\Qp\Q\y = \left( \Xp\Q\X \right)^{-1} \Xp\Q\y$$ 
+
+The results depend crucially on the panel being balanced.  Otherwise,
+the within transformations become much, much more complicated.  The
+non-uniform structure requires individual and special treatment for
+each unit in the data set.  The block diagonal matrices are of various
+sizes, and the dummy variable matrices must be tailored to suit the
+various time intervals.\\
+
+*Extra*: Some additional insight can be obtained by denoting $\A =
+\It - \iT \iT^{\prime}/T$ as the demeaning matrix.  Premultiplying by
+$\A$ will return a matrix with deviations from column means.  Note
+that $\A$ is symmetric and idempotent, so that $\A\A = \A$ and
+$\A^{\prime} = \A$.  If we wanted to transform the matrix toward
+deviations from row means, we would post-multiply by $\A$:
+$(\A\Xp)^{\prime} = \X\Ap = \X\A$.  This suggests the form of $\P_1$
+versus $\P_2$.
