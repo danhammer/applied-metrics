@@ -31,7 +31,7 @@ documented from the PDF description.
 
 The sections are organized as follows:
 
-[`section-01`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-01) Summary statistics
+[`section-01`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-01) Summary statistics in `R`
 
 [`section-02`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-02) SUTVA and nonparametric regression
 
