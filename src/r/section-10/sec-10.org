@@ -36,6 +36,20 @@
 #+LATEX: \renewcommand{\Ap}{{\bf A^{\prime}}}
 #+LATEX: \renewcommand{\y}{{\bf y}}
 #+LATEX: \renewcommand{\eps}{{\bf \epsilon}}
+#+LATEX: \newcommand{\sss}{$s^2$ }
+#+LATEX: \newcommand{\R}{\texttt{R} }
+#+LATEX: \newcommand{\ep}{{\bf e}^\prime}
+#+LATEX: \newcommand{\e}{{\bf e}}
+#+LATEX: \newcommand{\Rs}{R^2}
+#+LATEX: \newcommand{\yp}{{\bf y}^\prime}
+#+LATEX: \newcommand{\y}{{\bf y}}
+#+LATEX: \newcommand{\J}{{\bf J}}
+#+LATEX: \newcommand{\Z}{{\bf Z}}
+#+LATEX: \newcommand{\Zp}{{\bf Z}^{\prime}}
+#+LATEX: \renewcommand{\P}{{\bf P}}
+#+LATEX: \renewcommand{\Pp}{{\bf P}^{\prime}}
+#+LATEX: \newcommand{\Zin}{(\Zp\Z)^{-1}}
+#+LATEX: \newcommand{\sigs}{\sigma^2}
 #+LATEX: \renewcommand{\with}{\hspace{8pt}\mbox{with}\hspace{6pt}}
 #+LATEX: \setlength{\parindent}{0in}
 #+STARTUP: fninline
@@ -44,8 +58,7 @@
 
 *Instrumental Variables* \hfill
 *ARE213*: Section 10 \\ \\
-
-** Preliminaries: data generating process
+* Preliminaries: data generating process
 
 The first part of these section notes is a variation on Max
 Auffhammer's final exam for ARE212 in 2011.  If you don't like this
@@ -119,7 +132,7 @@ covariance matrix and a random multivariate normal matrix with 500
 observations, printing $\Sigma$ for reference:
 
 #+BEGIN_SRC R :results output :exports both :tangle yes :session
-(vcov <- vcov.fn(0, 0.5, 0.5))
+(vcov <- vcov.fn(rho.13 = 0, rho.23 = 0.5, rho.2z = 0.5))
 X <- rmvn.chol(500, vcov)
 #+END_SRC
 
@@ -143,7 +156,7 @@ apply(X, 2, function(i){var(i)})
 #+RESULTS:
 : [1] 0.9565675 0.9977746 0.9757320 1.0517126 1.0133977
 
-** Calculate bias in $\beta$ and it's standard error
+* Calculate bias in $\beta$ and it's standard error
 
 We will now write a couple of functions to help examine the bias of
 the parameter vector and it's standard error, using an array of
@@ -190,14 +203,12 @@ the number of observations for each iteration, defaulted at 500; =B=
 is the number of iterations in the MC simulation, defaulted at 10,000;
 =two.stage= is a boolean argument indicating whether the simulation
 should employ two-stage least squares with $z_i$ as the instrument for
-$x_{3i}$, defaulted to =FALSE=; =proxy= is a boolean indicating
-whether $z_i$ should be treated as a proxy for $x_{3i}$, defaulted to
-=FALSE=.  The default behavior, then, is to run a simulation where
-$x_{3i}$ is left out of the OLS regression, relegated to the error
-term.
+$x_{3i}$, defaulted to =FALSE=.  The default behavior, then, is to run
+a simulation where $x_{3i}$ is left out of the OLS regression,
+relegated to the error term.
 
 #+BEGIN_SRC R  :exports code :tangle yes
-est.bias <- function(vcov, n=500, B=1000, two.stage=FALSE, proxy=FALSE) {
+est.bias <- function(vcov, n=500, B=10000, two.stage=FALSE) {
   true.beta <- c(1, 2, -4, 1)
   res.beta <- mat.or.vec(3,B); res.se <- mat.or.vec(3,B)
 
@@ -216,10 +227,6 @@ est.bias <- function(vcov, n=500, B=1000, two.stage=FALSE, proxy=FALSE) {
       exog <- cbind(1, data[,1], predict)
       limited.ols <- ols.results(y, exog, first=first)
     }
-    else if (proxy==TRUE) {
-      exog <- cbind(1, data[,c(1, 4)])
-      limited.ols <- ols.results(y, exog)
-    }
     else {
       exog <- cbind(1, data[,1:2])
       limited.ols <- ols.results(y, exog)
@@ -229,7 +236,7 @@ est.bias <- function(vcov, n=500, B=1000, two.stage=FALSE, proxy=FALSE) {
     res.se[,i]   <- limited.ols[,2] - full.ols[1:3,2]
   }
   results <- cbind(rowMeans(res.beta), rowMeans(res.se))
-  colnames(results) <- c("beta bias", "se bias")
+  colnames(results) <- c("beta bias", "se chg")
   print(results)
 }
 #+END_SRC
@@ -239,110 +246,121 @@ est.bias <- function(vcov, n=500, B=1000, two.stage=FALSE, proxy=FALSE) {
 We can check =est.bias= by first setting $\rho_{13} = \rho_{23} = 0$
 and ensuring that the bias is very low with $n=500$ and $B = 10,000$.
 The following MC simulation sets $\Sigma = \I_5$ and runs the
-following regression $10,000$ times: $y_i = \beta_0 + \beta_1
-x_{1i} + \beta_2 x_{2i} + \epsilon_i$, where $\epsilon_i = x_{3i} +
-\eta_i$.
+following regression $10,000$ times:
+\begin{equation}
+\label{eq:sim}
+y_i = \beta_0 + \beta_1 x_{1i} + \beta_2 x_{2i} + \epsilon_i \with
+\epsilon_i = x_{3i} + \eta_i \ens
+\end{equation}
 
 #+BEGIN_SRC R :exports code :tangle yes
-vcov <- vcov.fn(0, 0, 0)
+vcov <- vcov.fn(rho.13 = 0, rho.23 = 0, rho.2z = 0)
 est.bias(vcov)
 #+END_SRC
 
 #+BEGIN_EXAMPLE
-         beta bias    se bias
+         beta bias     se chg
 [1,]  3.025788e-05 0.01850461
 [2,]  7.504312e-05 0.01853065
 [3,] -2.155886e-04 0.01853233
 #+END_EXAMPLE
 
+The parameter estimates seem fairly consistent.  The simulated bias is
+negligible.  The standard errors in the simulation are somewhat
+larger, however, simply because there is more variation in the
+composite error term.  Now suppose that $\rho_{23} = \rho_{3z} = 0.5$,
+so that $\E[\eps_i|x_{1i}, x_{2i}] \neq 0$.  The coefficient $\beta_2$
+is biased upwards by 0.5 in the simulation below (the magnitude of the
+correlation and parameter bias are not generally the same).
+
 #+BEGIN_SRC R :exports code :tangle yes
-vcov <- vcov.fn(0, 0.5, 0.5)
+vcov <- vcov.fn(rho.13 = 0, rho.23 = 0.5, rho.2z = 0.5)
 est.bias(vcov)
 #+END_SRC
 
 #+BEGIN_EXAMPLE
-         beta bias     se bias
+         beta bias      se chg
 [1,] -9.313589e-05 0.014414161
 [2,] -3.125962e-04 0.014437845
 [3,]  5.000045e-01 0.007484851
 #+END_EXAMPLE
 
+No biggie.  We have a suitable instrument, by design, that we can use
+to cordon off exogenous variation for estimation.  Note that $Cov(z_i,
+\eps_i) = 0$ since $z_i$ is uncorrelated with the full, composite
+error, but that $Cov(z_i, x_{2i}) = 0.5 \neq 0$, satisfying both
+properties of a suitable instrument.  We can now get a consistent
+estimate for $\beta$:
+
 #+BEGIN_SRC R :exports code :tangle yes
 est.bias(vcov, two.stage=TRUE)
 #+END_SRC
 
 #+BEGIN_EXAMPLE
-         beta bias   se bias
+         beta bias    se chg
 [1,]  0.0006683202 0.1239639
 [2,] -0.0005169007 0.1240761
 [3,] -0.0042907956 0.2877558
 #+END_EXAMPLE
 
-\noindent We can prove that, in general, the variance of the IV estimator is larger than the variance of an OLS estimator.  Let $\Z$ be a matrix of instruments and $\P = \Z\Zin\Zp$.  Then the IV estimator is $\hat{\beta}_{iv} = (\Xp \P \X)^{-1}\Xp \P \y$.  The projection matrix $\P$ is symmetric and idempotent, as is the residual maker $(\In - \P)$.  Note that for any $\X$ and any symmetric, idempotent matrix, the following fact is true:
+Note, however, that the standard errors are much higher.  We can prove
+that, in general, the variance of the IV estimator is larger than the
+variance of an OLS estimator.  Let $\Z$ be a matrix of instruments and
+$\P = \Z\Zin\Zp$.  Then the IV estimator is $\hat{\beta}_{iv} = (\Xp
+\P \X)^{-1}\Xp \P \y$.  The projection matrix $\P$ is symmetric and
+idempotent, as is the residual maker $(\In - \P)$.  Note that for any
+$\X$ and any symmetric, idempotent matrix, the following fact is true:
 \begin{equation}
 \Xp\P\X = \Xp\P\P\X = \Xp\Pp\P\X = (\P\X)^{\prime}(\P\X) \geq 0 
-\label{eq1}
+\label{eq:proj}
 \end{equation}
-Note also that $\V(\hat{\beta}_{ols}) = \sigs(\Xp\X)^{-1}$ and $\V(\hat{\beta}_{iv}) = \sigs(\Xp\P\X)^{-1}$. It suffices to show that $\Xp\X \geq \Xp\P\X$ to complete the proof.  It follows from Equation (\ref{eq1}) that:
-\[
-\Xp(\In-\P)\X \geq 0 \Rightarrow \Xp\X - \Xp\P\X \geq 0 \Rightarrow \Xp\X \geq \Xp\P\X,
-\]
-thus proving that $\V(\hat{\beta}_{iv}) \geq \V(\hat{\beta}_{ols})$.  The intuition is a bit more clear.  The IV estimator by design restricts the use of covariation between $\y$ and $\X$ to /only/ exogenous variation and therefore greater variance of the estimator.
+Note also that $\V(\hat{\beta}_{ols}) = \sigs(\Xp\X)^{-1}$ and $\V(\hat{\beta}_{iv}) = \sigs(\Xp\P\X)^{-1}$. It suffices to show that $\Xp\X \geq \Xp\P\X$ to complete the proof.  It follows from Equation (\ref{eq:proj}) that:
+$$ \Xp(\In-\P)\X \geq 0 \Rightarrow \Xp\X - \Xp\P\X \geq 0 \Rightarrow
+\Xp\X \geq \Xp\P\X,$$ thus proving that $\V(\hat{\beta}_{iv}) \geq
+\V(\hat{\beta}_{ols})$.  The intuition is a bit more clear.  The IV
+estimator restricts the use of covariation between $\y$ and $\X$ to
+/only/ exogenous variation.  The resulting estimator relies on less
+estimating variation to work with, and is therefore subject to greater
+variance.\\
+
+Instrumental variables are by no means a cure-all, however --- far
+from it.  First of all, an argument must be made for the exclusion
+restriction, that indeed the instrument is uncorrelated with the
+composite error term.  There is no way to check this empirically.
+Second, even if the exclusion restriction holds, the instrument must
+be highly correlated with the covariates.  Otherwise, we run into the
+problem of weak instruments, which is a /big/ problem, as illustrated
+below.  The set up is exactly the same, except that $\rho_{2z} =
+0.01$.  Technically, both properties of a suitable instrument are
+satisfied, but the instrumental projection of $x_{2i}$ leaves very
+little variation to work with.  The result is a crazy amount of
+variance, yielding an almost certainly biased estimate of $\beta$.
+The first simulation shows the standard bias induced by a violation of
+strict exogeneity:
 
 #+BEGIN_SRC R :exports code :tangle yes
-vcov <- vcov.fn(0, 0.5, 0.5)
-est.bias(vcov, proxy=TRUE)
-#+END_SRC
-
-#+BEGIN_EXAMPLE
-         beta bias    se bias
-[1,] -0.0000945208 0.09679044
-[2,]  0.0002856399 0.09692606
-[3,]  2.0001688753 0.08998506
-#+END_EXAMPLE
-
-#+BEGIN_SRC R :exports code :tangle yes
-vcov <- vcov.fn(0.5, 0.5, 0.5)
+vcov <- vcov.fn(rho.13 = 0, rho.23 = 0.5, rho.2z = 0.01)
 est.bias(vcov)
 #+END_SRC
 
 #+BEGIN_EXAMPLE
-         beta bias       se bias
-[1,] -0.0006474492  9.996362e-03
-[2,]  0.5005109401 -1.006042e-04
-[3,]  0.5004461721 -8.279249e-05
-#+END_EXAMPLE
-
-#+BEGIN_SRC R :exports code :tangle yes
-est.bias(vcov, two.stage=TRUE)
-#+END_SRC
-
-#+BEGIN_EXAMPLE
-         beta bias   se bias
-[1,]  0.0005228898 0.1224915
-[2,]  0.4996544539 0.1125726
-[3,] -0.0030798629 0.2818936
-#+END_EXAMPLE
-
-#+BEGIN_SRC R :exports code :tangle yes
-vcov <- vcov.fn(0, 0.5, 0.01)
-est.bias(vcov)
-#+END_SRC
-
-#+BEGIN_EXAMPLE
-         beta bias     se bias
+         beta bias      se chg
 [1,] -5.845659e-06 0.014421682
 [2,]  9.731249e-05 0.014443940
 [3,]  5.000803e-01 0.007497558
 #+END_EXAMPLE
 
+The second simulation displays the results of trying to correct the
+endogeneity with a weak instrument.  Not good.  Way worse.
+
 #+BEGIN_SRC R :exports code :tangle yes
 est.bias(vcov, two.stage=TRUE)
 #+END_SRC
 
 #+BEGIN_EXAMPLE
-       beta bias    se bias
+       beta bias     se chg
 [1,]  0.18013841   982.6684
 [2,] -0.02440537   745.3372
 [3,]  2.06182132 13433.0801
 #+END_EXAMPLE
+
