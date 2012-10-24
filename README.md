@@ -35,6 +35,14 @@ The sections are organized as follows:
 
 [`section-02`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-02) SUTVA and nonparametric regression
 
+[`section-06`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-06) Propensity Score Matching
+
+[`section-07`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-07) Random and Fixed Effects
+
+[`section-08`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-08) Diff-n-Diff Estimation
+
+[`section-10`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-10) Instrumental Variables
+
 # Help me write this!  
 
 This project can and _should_ be treated like any other open source,
