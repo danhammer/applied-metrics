@@ -16,8 +16,8 @@ and `.R` files.  In fact, the org-mode document _is_ the code; and you
 can dynamically update all downstream documents from within Emacs'
 org-mode.  You do not have to interact with the org-mode document
 directly if you are not using Emacs, but rather just with the R code
-or PDF write-up.  If you'd like to get set up with Emacs (_highly
-recommended_) then please see the next section of this README.
+or PDF write-up.  If you'd like to get set up with Emacs (highly
+recommended) then please see the next section of this README.
 
 2. A PDF of the section notes, which effectively documents the code.
 If you are only interested in following along, rather than running the
