@@ -43,6 +43,8 @@
 *Random and Fixed Effects* \hfill
 *ARE213*: Section 07 \\ \\
 
+* Distribution simulations
+
 The presence of an unobserved, individual effect $c_i$ in a panel data
 model will create a correlation over time in the outcome variable,
 even if the idiosyncratic error is completely random.  Still, with the
@@ -133,6 +135,9 @@ effect by appropriately reweighting the observations.
   sim <- data.frame(coefficient=c(fe.res, ols.res), method=labels)
   ggplot(sim, aes(x = coefficient, fill=method)) + geom_density(alpha=0.2)
 #+end_src 
+
+#+RESULTS:
+[[file:fig2.png]]
 
 Suppose that the model was not linear, but rather characterized by a
 limited dependent variable.  What will happen to the consistency and
