@@ -1,0 +1,150 @@
+#+OPTIONS:     toc:nil num:nil 
+#+LATEX_HEADER: \usepackage{mathrsfs}
+#+LATEX_HEADER: \usepackage{graphicx}
+#+LATEX_HEADER: \usepackage{amstex}
+#+LATEX_HEADER: \usepackage{booktabs}
+#+LATEX_HEADER: \usepackage{dcolumn}
+#+LATEX_HEADER: \usepackage{subfigure}
+#+LATEX_HEADER: \usepackage[margin=1in]{geometry}
+#+LATEX_HEADER: \RequirePackage{fancyvrb}
+#+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\small,formatcom = {\color[rgb]{0.1,0.2,0.9}}}
+#+LATEX: \renewcommand{\E}{\mathbb{E}}
+#+LATEX: \renewcommand{\V}{\mathbb{V}}
+#+LATEX: \renewcommand{\P}{\mathbb{P}}
+#+LATEX: \renewcommand{\yiz}{Y_i(0)}
+#+LATEX: \renewcommand{\one}{{\bf 1}}
+#+LATEX: \renewcommand{\yio}{Y_i(1)}
+#+LATEX: \renewcommand{\ld}{\underset{X \downarrow c}{\lim} \,}
+#+LATEX: \renewcommand{\lu}{\underset{X \uparrow c}{\lim} \,}
+#+LATEX: \renewcommand{\tsrd}{\tau_{srd}}
+#+LATEX: \renewcommand{\tfrd}{\tau_{frd}}
+#+LATEX: \renewcommand{\In}{\mathbb{I}_N}
+#+LATEX: \renewcommand{\with}{\hspace{8pt}\mbox{with}\hspace{6pt}}
+#+LATEX: \setlength{\parindent}{0in}
+#+STARTUP: fninline
+#+AUTHOR: 
+#+TITLE: 
+
+*Regression Discontinuity* \hfill
+*ARE213*: Section 11 \\ \\
+
+We ultimately want to estimate the effect of $D_i$ on $Y$.  Suppose
+that $D_i$ is determined, in part, by whether $X_i \geq c$.  We call
+$X_i$ the /running/ or /forcing/ variable.  We also assume that $\yiz$
+and $\yio$ are related to $X_i$ /continuously/.  There shouldn't be a
+large and discontinuous jump in $Y_i$ as $X_i$ changes because we
+assume a smooth relationship.  The probability of treatment goes up or
+down with $X_i$ as it is related to $c$ --- a causal effect on whether
+$i$ gets treated.  If we see that $Y$ jumps disconinously, then we can
+estimate or identify the effect arount the threshold value $c$. \\
+
+For example, test score cutoffs have been used as the threshold value
+for regression discontinuity design.  If a person failed a test, they
+would have to go to summer school; individuals around the cutoff
+served as the variation to help identify the efficacy or effect of
+summer school. \\
+
+We will never observe multiple treatments for the same individual.
+The $\yio$ and $\yiz$ are smooth functions of $X_i$.  Formally,
+$\E[\yiz|X_i = x]$ and $\E[\yio|X_i = x]$ are continuous in $X$.
+Then 
+\begin{equation}
+\label{e:est}
+\tsrd = \underset{X \downarrow c}{\lim} \, \E[Y_i|X_i = x] -
+\underset{X \uparrow c}{\lim} \, \E[Y_i|X_i = x]
+\end{equation} Rarely will we observe an individual with $X_i = c$;
+but in that case, we have assumed that the treatment is granted, here.
+We can't see what happens either $\E[\yiz|X_i = c]$ or $\E[\yio|X_i =
+x]$ in order to estimate the true treatment effect, defined by $$\tsrd
+= \E[\yio - \yiz|X_i = c] = \E[\yio|X_i = c] - \E[\yiz|X_i = c]$$
+
+We are trying to estimate Equation \ref{e:est} empirically by only
+looking at those individuals "near" the threshold $c$.  We can look at
+this in code with the generating process $$Y_i = 1 + X_i + 2\cdot
+D_i + \epsilon \with \epsilon \sim N(0,1/2)$$ where $i \in \{1, 2,
+\ldots, N\}$.  In particular, we set $\tsrd = 2$.  Can we estimate
+this treatment effect using regression discontinuity?  First consider
+the sharp RD design --- everyone with $X_i > c$ gets treated and
+everyone else does not.
+
+#+begin_src R :results output :exports both :tangle yes :session
+  c <- 0.5; N <- 10000
+  X <- runif(N)
+  D <- ifelse(X > c, 1, 0)
+  Y <- 1 + X + 2*D + rnorm(N, sd = 0.5)
+#+end_src 
+
+#+RESULTS:
+
+Now define a bandwidth $b$, where we restrict our attention to
+observations with $X_i \in (c - b, c + b)$.  The following code
+collects the indices for these individuals.
+
+#+begin_src R :results output :exports both :tangle yes :session
+  b <- 0.05
+  lower <- X < c & X > c - b
+  upper <- X > c & X < c + b
+#+end_src   
+
+#+RESULTS:
+
+The total number of individuals in this group should be about 10% of
+the total sample, or about 1,000 when $N = 10,000$, given that the
+$X_i$'s are drawn from a uniform distribution.  This is shown to be
+true:
+
+#+begin_src R :results output :exports both :tangle yes :session
+  length(c(which(upper), which(lower)))
+#+end_src 
+
+#+RESULTS:
+: [1] 1002
+
+It follows from Equation (\ref{e:est}) that we can simply difference
+the outcome variables for the upper and lower groups.  Indeed the
+outcome reflects this shift -- which can also be plotted.
+
+#+begin_src R :results output :exports both :tangle yes :session
+  mean(Y[upper]) - mean(Y[lower])
+#+end_src 
+
+#+RESULTS:
+: [1] 2.067221
+
+Now consider the fuzzy RD design, where $D_i$ is no longer determined
+/only/ by $X_i$.  Mathematically, 
+\begin{equation}
+\label{e:fuzz}
+0 < \ld \P[D_i = 1| X_i = x] - \lu \P[D_i = 1| X_i = x] < 1
+\end{equation} The estimate for the treatment effect in a fuzzy
+regression discontinuity design is therefore given as
+\begin{equation}
+\label{e:fuzz}
+\tfrd = \frac{\ld \E[Y_i| X_i = x] - \lu \E[Y_i| X_i = x]}{\ld \E[D_i| X_i = x] - \lu \E[D_i| X_i = x]}
+\end{equation} This is equivalent to the the instrumental variables
+estimator with instrument $Z_i = \one (X_i \geq c)$.  There must also
+be a monotonicity assumption about the way that the treatment changes
+with $X_i$.  If you increase the threshold, then there is a higher
+hurdle to get treated, so the probability of treatment should be
+non-increasing.  We have already assumed that the probability of
+treatment is increasing in the running variable $X$.  We need to
+assume this so there is not strange behavior around the threshold.\\
+
+#+begin_src R :results output :exports both :tangle yes :session
+  g <- 0.5; gamma <- runif(N) + ifelse(X > c, 1, 0) * rnorm(N, sd = 0.25)
+  D <- ifelse(gamma > g, 0, 1)
+  Y <- 1 + X + 2*D + rnorm(N, sd = 0.5)
+  
+  b <- 0.05
+  lower <- X < c & X > c - b
+  upper <- X > c & X < c + b
+  
+  mean(Y[upper]) - mean(Y[lower]) / mean(D[upper]) - mean(D[lower])
+#+end_src 
+
+#+RESULTS:
+: [1] -2.228257
+
+
+What happens when you apply the sharp design to a scenario where fuzzy
+RD is more appropriate?
