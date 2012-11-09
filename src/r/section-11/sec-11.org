@@ -2,6 +2,7 @@
 #+LATEX_HEADER: \usepackage{mathrsfs}
 #+LATEX_HEADER: \usepackage{graphicx}
 #+LATEX_HEADER: \usepackage{amstex}
+#+LATEX_HEADER: \usepackage{bbm}
 #+LATEX_HEADER: \usepackage{booktabs}
 #+LATEX_HEADER: \usepackage{dcolumn}
 #+LATEX_HEADER: \usepackage{subfigure}
@@ -12,7 +13,7 @@
 #+LATEX: \renewcommand{\V}{\mathbb{V}}
 #+LATEX: \renewcommand{\P}{\mathbb{P}}
 #+LATEX: \renewcommand{\yiz}{Y_i(0)}
-#+LATEX: \renewcommand{\one}{{\bf 1}}
+#+LATEX: \renewcommand{\one}{\mathbbm{1}}
 #+LATEX: \renewcommand{\yio}{Y_i(1)}
 #+LATEX: \renewcommand{\ld}{\underset{X \downarrow c}{\lim} \,}
 #+LATEX: \renewcommand{\lu}{\underset{X \uparrow c}{\lim} \,}
@@ -31,41 +32,43 @@
 We ultimately want to estimate the effect of $D_i$ on $Y$.  Suppose
 that $D_i$ is determined, in part, by whether $X_i \geq c$.  We call
 $X_i$ the /running/ or /forcing/ variable.  We also assume that $\yiz$
-and $\yio$ are related to $X_i$ /continuously/.  There shouldn't be a
-large and discontinuous jump in $Y_i$ as $X_i$ changes because we
-assume a smooth relationship.  The probability of treatment goes up or
-down with $X_i$ as it is related to $c$ --- a causal effect on whether
-$i$ gets treated.  If we see that $Y$ jumps disconinously, then we can
-estimate or identify the effect arount the threshold value $c$. \\
+and $\yio$ are related to $X_i$ /continuously/ to preclude a large and
+discontinuous jump in $Y_i$ as $X_i$ changes.  Suppose further that
+the probability of treatment ($D_i = 1$) changes, based on how $X_i$
+is related to a threshold $c$. If we see that $Y$ jumps disconinously,
+then we can estimate the effect of treatment around the threshold
+value.  \\
 
-For example, test score cutoffs have been used as the threshold value
-for regression discontinuity design.  If a person failed a test, they
-would have to go to summer school; individuals around the cutoff
-served as the variation to help identify the efficacy or effect of
-summer school. \\
+As an example, researchers have used test score cutoffs as the
+threshold value in a regression discontinuity design.  If a person
+failed a test, they were sent to summer school.  The outcomes of
+students around the cutoff served to identify the efficacy of summer
+school. \\
 
-We will never observe multiple treatments for the same individual.
-The $\yio$ and $\yiz$ are smooth functions of $X_i$.  Formally,
-$\E[\yiz|X_i = x]$ and $\E[\yio|X_i = x]$ are continuous in $X$.
-Then 
+We will never observe multiple treatments for the same individual, and
+are therefore unable to calculate $\yio - \yiz$ directly.  Instead, we
+can examine similar observations around the cutoff to estimate the
+expected impact.  First, assume that $\yio$ and $\yiz$ are smooth
+functions of $X_i$.  Formally, $\E[\yiz|X_i = x]$ and $\E[\yio|X_i =
+x]$ are continuous in $X$.  Then
 \begin{equation}
 \label{e:est}
 \tsrd = \underset{X \downarrow c}{\lim} \, \E[Y_i|X_i = x] -
 \underset{X \uparrow c}{\lim} \, \E[Y_i|X_i = x]
-\end{equation} Rarely will we observe an individual with $X_i = c$;
-but in that case, we have assumed that the treatment is granted, here.
-We can't see what happens either $\E[\yiz|X_i = c]$ or $\E[\yio|X_i =
-x]$ in order to estimate the true treatment effect, defined by $$\tsrd
-= \E[\yio - \yiz|X_i = c] = \E[\yio|X_i = c] - \E[\yiz|X_i = c]$$
-
-We are trying to estimate Equation \ref{e:est} empirically by only
-looking at those individuals "near" the threshold $c$.  We can look at
-this in code with the generating process $$Y_i = 1 + X_i + 2\cdot
-D_i + \epsilon \with \epsilon \sim N(0,1/2)$$ where $i \in \{1, 2,
-\ldots, N\}$.  In particular, we set $\tsrd = 2$.  Can we estimate
-this treatment effect using regression discontinuity?  First consider
-the sharp RD design --- everyone with $X_i > c$ gets treated and
-everyone else does not.
+\end{equation} We will rarely observe an individual with $X_i = c$ but
+in that case, assume that the treatment is granted.  For a given
+individual, we will be unable to observe either $\E[\yiz|X_i = x]$ or
+$\E[\yio|X_i = x]$ in order to estimate the true treatment effect,
+defined by $$\tsrd = \E[\yio - \yiz|X_i = c] = \E[\yio|X_i = c] -
+\E[\yiz|X_i = c]$$ and so we must rely on the estimate in Equation
+(\ref{e:est}). We are trying to estimate Equation \ref{e:est}
+empirically by only looking at those individuals "near" the threshold
+$c$.  We can look at this in code with the generating process $$Y_i =
+1 + X_i + 2\cdot D_i + \epsilon \with \epsilon \sim N(0,1/2)$$ where
+$i \in \{1, 2, \ldots, N\}$.  In particular, we set $\tsrd = 2$.  Can
+we estimate this treatment effect using regression discontinuity?
+First consider the sharp RD design --- everyone with $X_i > c$ gets
+treated and everyone else does not.
 
 #+begin_src R :results output :exports both :tangle yes :session
   c <- 0.5; N <- 10000
@@ -128,23 +131,71 @@ with $X_i$.  If you increase the threshold, then there is a higher
 hurdle to get treated, so the probability of treatment should be
 non-increasing.  We have already assumed that the probability of
 treatment is increasing in the running variable $X$.  We need to
-assume this so there is not strange behavior around the threshold.\\
+assume that there is not strange behavior around the threshold.\\
+
+Consider the following data generating process, where the treatment is
+no longer a deterministic function of $Y_i$ and that there is some
+additional randomness that determines treatment:
 
 #+begin_src R :results output :exports both :tangle yes :session
-  g <- 0.5; gamma <- runif(N) + ifelse(X > c, 1, 0) * rnorm(N, sd = 0.25)
-  D <- ifelse(gamma > g, 0, 1)
+  g <- 0.5; gamma <- ifelse(X > c, 1, 0) + rnorm(N)
+  D <- ifelse(gamma > g, 1, 0)
   Y <- 1 + X + 2*D + rnorm(N, sd = 0.5)
-  
-  b <- 0.05
-  lower <- X < c & X > c - b
-  upper <- X > c & X < c + b
-  
-  mean(Y[upper]) - mean(Y[lower]) / mean(D[upper]) - mean(D[lower])
+#+end_src   
+
+#+RESULTS:
+
+The probability of treatment is increasing in $X$, specifically, $D_i
+= \one (\gamma_i > g)$, where $gamma_i = \one (X_i > c) + \epsilon_i$,
+with $\epsilon_i \sim N(0,1)$ and where $g$ is a predetermined
+threshold distinct from $c$.  We can estimate the treatment effect in
+Equation (\ref{e:fuzz}) by scaling the sharp regression discontinuity
+with the difference in probability on either side of the $c$
+threshold.
+
+#+begin_src R :results output :exports both :tangle yes :session  
+  (mean(Y[upper]) - mean(Y[lower])) / (mean(D[upper]) - mean(D[lower]))
 #+end_src 
 
 #+RESULTS:
-: [1] -2.228257
+: [1] 1.97036
 
+Note that, assuming that (\ref{e:fuzz}) yields an unbiased estimator,
+applying the sharp RD in (\ref{e:est}) will underestimate the
+treatment impact, given that $$\ld \E[D_i| X_i = x] - \lu \E[D_i| X_i
+= x] < 1$$ How is the estimator from the fuzzy regression
+discontinuity design distributed?  The following code runs the exact
+specification 1,000 times and plots the histogram in Figure
+\ref{f:fuzz}.
 
-What happens when you apply the sharp design to a scenario where fuzzy
-RD is more appropriate?
+#+begin_src R :results output :exports both :tangle yes :session
+  sim.fn <- function(repitition, c = 0.5, b = 0.05, g = 0.5, N = 10000) {
+    X <- runif(N)
+    gamma <- ifelse(X > c, 1, 0) + rnorm(N)
+    D <- ifelse(gamma > g, 1, 0)
+    Y <- 1 + X + 2*D + rnorm(N, sd = 0.5)
+    lower <- X < c & X > c - b
+    upper <- X > c & X < c + b
+    (mean(Y[upper]) - mean(Y[lower])) / (mean(D[upper]) - mean(D[lower]))
+  }
+#+end_src   
+
+#+RESULTS:
+
+The resulting histogram suggests that the fuzzy RD design is biased
+upwards.  Additionally, the bias is a function of almost all of the
+parameters in =sim.fn=, including $c$, $g$, $b$, and the standard
+error on the disturbance terms. Why would this be?  It seems that the
+bias is a result of attenuation, given two strict thresholds and two
+continuous distributions.  
+
+#+CAPTION: Histogram of estimated impact, simulated fuzzy regression discontinuity
+#+LABEL: f:fuzz
+#+begin_src R :results output graphics :file fuzz.png :width 700 :height 400 :tangle yes :exports both 
+  x <- sapply(1:1000, sim.fn)
+  hist(x, xlab = "", border = "grey", col = "grey", breaks = 40, main = "")
+#+end_src 
+
+#+RESULTS:
+[[file:fuzz.png]]
+
