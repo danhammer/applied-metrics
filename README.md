@@ -22,30 +22,30 @@ recommended) then please see the next section of this README.
 2. A PDF of the section notes, which effectively documents the code.
 If you are only interested in following along, rather than running the
 code yourself, just browse to the `.pdf` file for the section
-(e.g. [`sec-01.pdf`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-02/sec-02.pdf))
+(e.g. [`sec-01.pdf`](https://github.com/danhammer/applied-metrics/tree/develop/src/r/section-02/sec-02.pdf))
 and click "view raw".  The PDF will begin downloading immediately.
-
+https://github.com/danhammer/applied-metrics/tree/develop/src/r/section-01
 3. An R script that compiles all of the code within the PDF.  Note
 that there is no documentation within the code.  Instead, the code is
 documented from the PDF description.
 
 The sections are organized as follows:
 
-[`section-01`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-01) Summary statistics in `R`
+[`section-01`](https://github.com/danhammer/applied-metrics/tree/develop/src/r/section-01) Summary statistics in `R`
 
-[`section-02`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-02) SUTVA and nonparametric regression
+[`section-02`](https://github.com/danhammer/applied-metrics/tree/develop/src/r/section-02) SUTVA and nonparametric regression
 
-[`section-06`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-06) Propensity Score Matching
+[`section-06`](https://github.com/danhammer/applied-metrics/tree/develop/src/r/section-06) Propensity Score Matching
 
-[`section-07`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-07) Random and Fixed Effects
+[`section-07`](https://github.com/danhammer/applied-metrics/tree/develop/src/r/section-07) Random and Fixed Effects
 
-[`section-08`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-08) Difference-n-differencess Estimation
+[`section-08`](https://github.com/danhammer/applied-metrics/tree/develop/src/r/section-08) Difference-n-differencess Estimation
 
-[`section-10`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-10) Instrumental Variables
+[`section-10`](https://github.com/danhammer/applied-metrics/tree/develop/src/r/section-10) Instrumental Variables
 
-[`section-11`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-11) Regression Discontinuity
+[`section-11`](https://github.com/danhammer/applied-metrics/tree/develop/src/r/section-11) Regression Discontinuity
 
-[`section-12`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-12) Time series warping for diff-in-diffs estimation
+[`section-12`](https://github.com/danhammer/applied-metrics/tree/develop/src/r/section-12) Time series warping 
 
 # Help me write this!  
 
