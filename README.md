@@ -39,9 +39,13 @@ The sections are organized as follows:
 
 [`section-07`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-07) Random and Fixed Effects
 
-[`section-08`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-08) Diff-n-Diff Estimation
+[`section-08`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-08) Difference-n-differencess Estimation
 
 [`section-10`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-10) Instrumental Variables
+
+[`section-11`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-11) Regression Discontinuity
+
+[`section-12`](https://github.com/danhammer/applied-metrics/blob/master/src/r/section-12) Time series warping for diff-in-diffs estimation
 
 # Help me write this!  
 
