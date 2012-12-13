@@ -10,9 +10,6 @@
 #+LATEX_HEADER: \RequirePackage{fancyvrb}
 #+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\small,formatcom = {\color[rgb]{0.1,0.2,0.9}}}
 #+LATEX: \renewcommand{\E}{\mathbb{E}}
-#+LATEX: \renewcommand{\P}{\mathbb{P}}
-#+LATEX: \renewcommand{\In}{\mathbb{I}_N}
-#+LATEX: \renewcommand{\with}{\hspace{8pt}\mbox{with}\hspace{6pt}}
 #+LATEX: \setlength{\parindent}{0in}
 #+STARTUP: fninline
 #+AUTHOR: 
@@ -152,26 +149,27 @@ Suppose, now, that the time lag structure is different between the
 treatment and control groups.  Moreover, assume that the lag structure
 within the treatment group changes over time.  We can model this type
 of behavior using a random walk, which defines the lag structure in
-each period. Consider a cumulative binomial process which has been
-normalized and scaled:
+each period. Consider a cumulative binomial process that will define a
+lengthening lag structure in the treatment group's error process:
 
 #+begin_src R :results none :exports code :tangle yes
   slow.factor <- cumsum(rbinom(100, 1, p=0.1))
 #+end_src 
 
-This process in non-decreasing and remains in the closed interval
-$[0,2]$.  If we add this to the $\alpha$ parameter for the treatment
-group, then the sinusoidal error will slow throughout the time
-interval.  
+If we add a normalized and scaled version of =slow.factor= to the
+$\alpha$ parameter for the treatment group, then the frequency of the
+sinusoidal error process will slow throughout the time interval.  Note
+that =alpha.treatment= is no longer a constant vector, but instead
+drifts upward according to the binomial process with $p = 1/10$.
 
 #+begin_src R :results none :exports code :tangle yes
   alpha.treatment <- alpha.treatment + 2 * slow.factor/max(slow.factor)
 #+end_src 
 
-The time component of the error term for the treatment group will
-become stretched, relative to the time component of the error term for
-the control group.  Figure \ref{fig:dtw} shows the new outcome
-variables for the treatment and control groups over time.  The
+In other words, the time component of the error term for the treatment
+group becomes stretched relative to the time component of the error
+term for the control group.  Figure \ref{fig:dtw} shows the new
+outcome variables for the treatment and control groups over time.  The
 treatment time series progressively drifts further from the control
 time series. If we run the simulation on the new data generating
 process, then the mean of the treatment effect distribution is 0.607
@@ -182,7 +180,11 @@ treatment effect because the error processes are out of phase. \\
 \begin{figure}[h]
         \centering
         \includegraphics[width=0.85\textwidth]{dtw.png}
-        \caption{Outcomes for {\bf treatment} and \textcolor{red}{{\bf control groups}}, where treatment error drifts; grey lines indicate the match from the dynamic time warping algorithm}
+
+        \caption{Outcomes for {\bf treatment} and \textcolor{red}{{\bf
+        control}} groups, where treatment error drifts; grey lines
+        indicate the match from the dynamic time warping algorithm}
+
         \label{fig:dtw}
 \end{figure}
 
@@ -207,11 +209,6 @@ standard DiD estimator constrains the match to perfectly vertical
 lines, which will ignore the variable lag structure, thereby biasing
 the estimate of the treatment effect.\\
 
-As with any empirical method, DTW only works in certain circumstances;
-and if it is misused, it may induce bias in the parameter estimate or
-balloon the standard errors.  But it seems to work in certain
-circumstances --- which I will describe later, if useful.
-
 \begin{figure}[h]
         \centering
         \includegraphics[width=0.95\textwidth]{hist-estimate.png}
@@ -219,5 +216,47 @@ circumstances --- which I will describe later, if useful.
         \label{fig:hist-est}
 \end{figure}
 
+As with any empirical method, DTW only works in certain circumstances;
+and if it is misused, it may induce bias in the parameter estimate or
+balloon the standard errors.  But it seems to work in certain
+circumstances --- which I will describe later, if useful.  A practical
+application for DTW in economics has already surfaced in my own
+research on fixed-cost investment for new clusters of deforestation.
+In May 2011, Indonesia enacted a moratorium on new clusters of
+deforestation, just as the price of palm oil (the primary agricultural
+product) peaked.  Historically in Indonesia, high palm oil prices have
+been correlated with investment in new clusters of deforestation,
+rather than clearing forest on the periphery of existing clusters.
+This makes sense: producers are more willing to open new resource
+pools when expected return is high enough to cover the immediate
+set-up costs.  This is shown by Hartwick, /et al./ (1986) with a
+simple dynamic programming problem \cite{Hartwick1986212}. To identify
+the effect of the moratorium on the formation of new clusters, we
+examine the island of Borneo, which is divided into Indonesia and
+Malaysia.  Malaysia was not subject to the moratorium and serves as
+the control group.  The moratorium was implemented at around index 60
+in Figure \ref{fig:app}.  The standard DiD approach will underestimate
+the downward pressure of the moratorium on new cluster formation in
+Indonesia.  We are able to utilize patterns in the residual to better
+identify the broad impact of the treatment, relative to Malaysia.\\
+
+There are many examples where this sort of technique may be useful (if
+used appropriately) to better identify broad trends in economic time
+series.
+
+\begin{figure}[h]
+        \centering
+        \includegraphics[width=0.95\textwidth]{match.png}
+
+        \caption{Proportion of deforestation in new clusters for {\bf
+        Indonesia} and \textcolor{red}{{\bf Malaysia}} from January 1,
+        2008 through September 13, 2012 in 16-day intervals; grey
+        lines indicate the match from the dynamic time warping
+        algorithm}
+
+        \label{fig:app}
+\end{figure}
+
+#+LATEX: \pagebreak
 #+LATEX: \bibliographystyle{abbrv}
 #+LATEX: \bibliography{../appliedbib}
