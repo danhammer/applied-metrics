@@ -182,7 +182,7 @@ treatment effect because the error processes are out of phase. \\
         \includegraphics[width=0.85\textwidth]{dtw.png}
 
         \caption{Outcomes for {\bf treatment} and \textcolor{red}{{\bf
-        control}} groups, where treatment error drifts; grey lines
+        control}} groups, where treatment error drifts; gray lines
         indicate the match from the dynamic time warping algorithm}
 
         \label{fig:dtw}
@@ -200,14 +200,14 @@ say "stats" or "staaaaats" --- likely using some variant of the DTW
 algorithm. In the context of identifying the treatment effect, and
 specifically for the warped DiD estimator, we reconstruct the
 treatment sequence based on the matched values in the control
-sequence.  As an illustration, consider the match lines in Figure
-{fig:dtw}, which identify similar patterns in the unexplained variance
-of the outcome.  If we run the same simulation as before, with 1,000
-iterations, the estimated treatment effect is 0.484 with a standard
-deviation of 0.172 --- much closer to the true parameter.  The
-standard DiD estimator constrains the match to perfectly vertical
-lines, which will ignore the variable lag structure, thereby biasing
-the estimate of the treatment effect.\\
+sequence.  Consider the match lines in Figure \ref{fig:dtw}, which
+identify similar patterns in the unexplained variance of the outcome
+variable for the treatment and control groups.  If we run the same
+simulation as before, with 1,000 iterations, the estimated treatment
+effect is 0.484 with a standard deviation of 0.172 --- much closer to
+the true parameter.  The standard DiD estimator constrains the match
+to perfectly vertical lines, which will ignores the variable lag
+structure, thereby biasing the parameter estimate.\\
 
 \begin{figure}[h]
         \centering
@@ -240,22 +240,62 @@ the downward pressure of the moratorium on new cluster formation in
 Indonesia.  We are able to utilize patterns in the residual to better
 identify the broad impact of the treatment, relative to Malaysia.\\
 
-There are many examples where this sort of technique may be useful (if
-used appropriately) to better identify broad trends in economic time
-series.
+Note that in the real-world example, the lag structure is not well
+defined --- there is stretching and retracting.  The DTW method allows
+for a systematic and quantitative alignment that your eye does
+immediately.  The simulated examples may actually not do the technique
+justice, relative to the real-world applications, which are often much
+more complex but less heavy-handed. There are many examples where this
+sort of technique may be useful (if used appropriately) to better
+identify broad trends in economic time series.\\
 
 \begin{figure}[h]
         \centering
-        \includegraphics[width=0.95\textwidth]{match.png}
+        \includegraphics[width=0.99\textwidth]{match.png}
 
         \caption{Proportion of deforestation in new clusters for {\bf
         Indonesia} and \textcolor{red}{{\bf Malaysia}} from January 1,
-        2008 through September 13, 2012 in 16-day intervals; grey
+        2008 through September 13, 2012 in 16-day intervals; gray
         lines indicate the match from the dynamic time warping
         algorithm}
 
         \label{fig:app}
 \end{figure}
+
+A relevant question is how DTW can be used for inference.  As with any
+non-parametric method, there may be limitations on the extensibility
+of the observed patterns.  Take, for example, the widely used
+propensity score matching (PSM) method to identify the average, causal
+treatment effect in the presence of selection into treatment.  Each
+individual is assigned a propensity score of receiving treatment,
+conditional on a set of observable characteristics.  The individuals
+are then matched based on the score, and the outcomes are compared
+between those individuals who received treatment and those who did
+not.  The arbitrary search is introduced in matching observations
+based on their propensity score.  A variety of techniques have been
+used, including nearest neighbor search, sample stratification, local
+linear or kernal regression, among many others.  The results of this
+matching method are then fed into a standard parametric test of the
+difference in means.  What does the final test statistic represent?
+This, to me, is not straightforward. \\
+
+A standard $p$-value, for example, will represent the probability of
+observing the parameter value, given that the hypothesized parameter
+value actually represents the full population.  However, after
+smoothing and matching the data based on a constructed propensity
+score, the interpretation of the $p$-value is not as clear.  We would
+have to assume that the matching technique used to stratify the sample
+would behave identically for the full population as it did for the
+sample population.  The interaction of the matching technique with the
+data adds an additional level of contrived abstraction to the
+measurement of the treatment effect.  This interaction is not
+accounted for in the test statistic.  I will look more closely at the
+way in which the PSM method is justified in the literature.
+Presumably, the DTW method could justifiably first match like
+observations over time (like the PSM over individuals) and then apply
+a parameterized difference in means through DiD.  I do not see a
+conceptual difference between PSM and DTW for the estimation of the
+average treatment effect.
 
 #+LATEX: \pagebreak
 #+LATEX: \bibliographystyle{abbrv}
