@@ -1,3 +1,5 @@
+library(ggplot2)
+library(dtw)
 
 random.data <- function(T = 100, alpha = 5) {
   t <- 1:T
@@ -47,7 +49,8 @@ dev.off()
 ##   res
 ## }
 
-
+alpha <- 5
+t <- 1:100
 e0 <- rnorm(T, sd=0.25); e1 <- rnorm(T, sd=0.25)
 time.error <- sin(t/alpha)
 P <- ifelse(t > T/2, 1, 0)
@@ -88,7 +91,9 @@ warped.est <- function(df) {
   diff.data <- data.frame(idx=align$index1, diff=diff)
   y1 <- y0 + aggregate(diff.data, by=list(diff.data$idx), FUN=mean)$diff
   df$y <- c(y0, y1)
+  ## df <- df[df$t <= max(align$index2), ]
   m <- lm(y ~ 1 + P + G + P*G, data=df)
+  print(m$coefficients[["P:G"]])
   return(m$coefficients[["P:G"]])
 }
 
@@ -113,20 +118,20 @@ plot(y0, type="l", ylim=c(-1, 6), ylab="y", col="red", lty=2)
 lines(y1)
 dev.off()
 align <- dtw(y1, y0, step.pattern=symmetricP2, open.end=TRUE)
-
 png("dtw.png", width=750)
 dtwPlotTwoWay(align, y1, y0, ylab="y")
 dev.off()
-
-## y1.w <- y1[align$index1]
 y0.match.val <- y0[align$index2]
 y1.match.val <- y1[align$index1]
+graph.seq <- 1:max(align$index2)
 diff <- y1.match.val - y0.match.val
 diff.data <- data.frame(idx=align$index1, diff=diff)
-y1 <- y0 + aggregate(diff.data, by=list(diff.data$idx), FUN=mean)$diff
+y1.new <- y0 + aggregate(diff.data, by=list(diff.data$idx), FUN=mean)$diff
 plot(y0, type="l", ylim=c(-1, 6), ylab="y")
-lines(y1, col="red")
-new.diff <- y1-y0
-mean(new.diff[50:100]) - mean(new.diff[1:50])
-
-plot(y1-y0, type="l")
+lines(y1.new, col="red")
+new.diff <- y1.new[graph.seq]-y0[graph.seq]
+old.diff <- y1[graph.seq]-y0[graph.seq]
+plot(new.diff, type="l", ylim=c(1, 6), col="red")
+lines(old.diff)
+mean(new.diff[51:max(align$index2)]) - mean(new.diff[1:50])
+mean(old.diff[51:max(align$index2)]) - mean(old.diff[1:50])

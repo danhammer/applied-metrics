@@ -17,17 +17,18 @@
 *Data manipulation in* \texttt{R} \hfill
 *ARE213*: Preliminaries \\ \\
 
-The most powerful functions in Stata are =sort=, =reshape=,
-=collapse=, and =merge=.  These functions are the bread and butter of
-Stata; and they justify the continued use of Stata in economic
-research.  It seems like =R= is becoming more prevalent, however, as
-the types of analysis required for empirical research become more
-varied, and must rely more heavily on a wider developer base.  It
-makes sense, then, to spend a little time learning how to replicate
+Stata is the primary statistics package for empirical research in
+economics.  The most powerful functions for data manipulation in Stata
+are =sort=, =reshape=, =collapse=, and =merge=.  It seems like =R= is
+becoming more prevalent in economics, however, as the types of
+analysis required for empirical research become more varied, and must
+rely more heavily on a wider developer base.  Also, the statistics
+department does not use Stata at all, as far as I can tell.  Only =R=.
+It makes sense, then, to spend a little time learning how to replicate
 the =sort=, =reshape=, =collapse=, and =merge= capabilities in =R=. \\
 
-We can first create a sample data frame for manipulation, and then
-print the output.
+First create a sample data frame for manipulation and print the
+output:
 
 #+begin_src R :results output graphics :exports both :tangle yes :session  
   (X <- data.frame(id=c(1,1,2,2), t=c(1,2,1,2), x1=c(5,3,6,2), x2=c(6,5,1,4)))
@@ -35,17 +36,17 @@ print the output.
 
 * Sort 
 
-The difference between Stata and =R= is that, with Stata, the data are
-very rigid, which often simplifies operations for economic data.  The
-data in =R=, however, can take many forms, including lists, vectors,
-and data frames.  And there can be multiple data sets in memory
-simultaneously.  Simple operations, then, must be more explicitly
-defined.  Sorting data is not as simple as "sort data", but it's not
-too much more complicated.  Instead, we arrange the data according to
-a list of indices.  \\
+One clear difference between Stata and =R= is that, with Stata, the
+data are very rigid, aligned as a rectangular data frame. This
+structure often simplifies operations on economic data.  The data in
+=R=, however, can take many forms, including lists and vectors.  And
+there can be multiple data sets in memory simultaneously.  Simple
+operations, then, must be more explicitly defined.  Sorting data is
+not as simple as =sort data=, but it's not too much more complicated.
+Instead, we arrange the data according to a list of indices.  \\
 
-First, as a refresher of indexing a data frame, suppose that we want
-to extract just the second row of $X$:
+First, consider the indexing of a data frame, and suppose that we want to
+extract just the second row of =X=:
 
 #+begin_src R :results output graphics :exports both :tangle yes :session  
   X[2, ]
@@ -53,7 +54,10 @@ to extract just the second row of $X$:
 
 #+RESULTS:
 :   id t x1 x2
+: 1  1 1  5  6
 : 2  1 2  3  5
+: 3  2 1  6  1
+: 4  2 2  2  4
 
 And the second through fourth rows:
 
@@ -67,8 +71,8 @@ And the second through fourth rows:
 : 3  2 1  6  1
 : 4  2 2  2  4
 
-And then, suppose, that we want to collect the second and fourth rows,
-except we ant to reverse the order:
+And then suppose that we want to collect the second and fourth rows
+/and/ we want to reverse the order:
 
 #+begin_src R :results output graphics :exports both :tangle yes :session  
   X[c(4,2), ]
@@ -112,15 +116,15 @@ $j$.  In wide format, each observation is uniquely identified by the
 $i$ index, and the $j$ indexed attributes are separate variables or
 columns.  In long format, each observation is uniquely identified by a
 different $i,j$ combination.  All else equal, there will be more
-observations or rows in long format, and more variables or columns in
-wide format. Consider for example the data frame $X$, and let =id= be
-indexed by $i$ and =t= be indexed by $j$.  The data frame is therefore
-already in long format, as each observation is identified by an ID
-/and/ and time period: individual 1 in period 1 is represented as a
-different observation than individual 1 in period 2.  Suppose that we
-want the unit of observation to be only the unique IDs, converting the
-data frame to wide format.  There are many, many ways to do this in
-=R=, but we will use the =reshape= command:
+observations or rows in long format and more variables or columns in
+wide format. Consider, for example, the data frame =X=, and let =id=
+be indexed by $i$ and =t= be indexed by $j$.  The data frame is
+therefore already in long format, as each observation is identified by
+an individual identifier /and/ and time period: individual 1 in period
+1 is represented as a different observation than individual 1 in
+period 2.  Suppose that we want the unit of observation to be only the
+unique IDs, converting the data frame to wide format.  There are many,
+many ways to do this in =R=, but we will use the =reshape= command:
 
 #+begin_src R :results output graphics :exports both :tangle yes :session  
   (wide <- reshape(X, idvar="id", timevar="t", direction="wide"))
@@ -134,7 +138,7 @@ data frame to wide format.  There are many, many ways to do this in
 Note that the arguments in the =reshape= command indicate that the
 natural use case is for panel data, where $i$ indexes the unit ID
 variable and $j$ indexes the time variable.  Reshaping data is
-actually pretty fun --- it's like playing the Creator (see Figure
+actually pretty fun --- like playing the Creator (see Figure
 \ref{f:cal}).  Even for a simple data frame like =X=, there are $2^3 =
 8$ different formats, since we can view the index on the =x=
 characteristic as yet another index.  With respect to that index,
@@ -144,7 +148,8 @@ of the three indices, where the third is the 1 or 2 that follows the
 =x= variable.  Instead of reshape, we can "melt" the data to long
 format:
 
-#+begin_src R :results output graphics :exports both :tangle yes :session  
+#+begin_src R :results output graphics :exports both :tangle yes :session
+  library(reshape)
   (llong <- melt(X, id=c("id","t")))
 #+end_src
 
@@ -171,10 +176,9 @@ context.
 #+LATEX: \label{f:cal}
 #+LATEX: \end{figure}
 
-
 * Collapse
 
-Suppose that we want to transform the data frame to reflect the
+Now suppose that we want to transform the data frame to reflect the
 average value of $x_1$ and $x_2$ across time periods $t \in \{1,2\}$.
 In Stata, we'd use the =collapse= command; the comparable command,
 both in function and in name, within =R= is =aggregate=.
@@ -198,7 +202,7 @@ parameter is a list.
 * Merge
 
 Consider another data frame =Y= with another characteristic for each
-unit and time period.  
+nunit and time period.  
 
 #+begin_src R :results output graphics :exports both :tangle yes :session  
   (Y <- data.frame(id=c(1,1,2,2), t=c(1,2,1,2), x3=c(4,3,4,3)))
@@ -263,8 +267,7 @@ time).
 : 1  1 yes
 : 2  2  no
 
-We can merge this into the panel data frame $X$ using roughly
-the same syntax.
+We can merge this into the panel data frame =X= using the same syntax.
 
 #+begin_src R :results output graphics :exports both :tangle yes :session  
   merge(X, Z, by=c("id"))
